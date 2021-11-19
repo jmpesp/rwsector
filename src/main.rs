@@ -4,8 +4,11 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 //
 
-use std::fs::{File, OpenOptions};
+extern crate libc;
+
+use std::fs::OpenOptions;
 use std::io::{Read, Seek, SeekFrom, Write};
+use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -92,6 +95,7 @@ fn hexdump(data: &[u8], starting_offset: usize, count: usize, bsz: usize, width:
 }
 
 fn main() -> Result<()> {
+    println!("raw");
     let args = Args::from_args_safe()?;
     match args {
         Args::Read {
@@ -101,7 +105,10 @@ fn main() -> Result<()> {
             bsz,
             width,
         } => {
-            let mut file = File::open(path)?;
+            let mut file = OpenOptions::new()
+                .read(true)
+                .custom_flags(libc::O_DIRECT)
+                .open(path)?;
             let mut data = vec![0u8; count * bsz];
 
             file.seek(SeekFrom::Start((offset * bsz) as u64))?;
@@ -118,7 +125,10 @@ fn main() -> Result<()> {
             bsz,
             width,
         } => {
-            let mut file = OpenOptions::new().write(true).open(path)?;
+            let mut file = OpenOptions::new()
+                .write(true)
+                .custom_flags(libc::O_DIRECT)
+                .open(path)?;
             let data = vec![value; count * bsz];
 
             println!("write to block {}:", offset);
@@ -135,7 +145,10 @@ fn main() -> Result<()> {
             bsz,
             width,
         } => {
-            let mut file = OpenOptions::new().write(true).open(path)?;
+            let mut file = OpenOptions::new()
+                .write(true)
+                .custom_flags(libc::O_DIRECT)
+                .open(path)?;
 
             let mut rng = rand::thread_rng();
             let mut data = vec![0u8; count * bsz];
