@@ -4,11 +4,13 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 //
 
-use anyhow::Result;
+extern crate libc;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
+use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 
+use anyhow::Result;
 use rand::RngCore;
 use structopt::StructOpt;
 
@@ -93,7 +95,10 @@ fn main() -> Result<()> {
             count,
             byte,
         } => {
-            let mut file = OpenOptions::new().write(true).open(path)?;
+            let mut file = OpenOptions::new()
+                .write(true)
+                .custom_flags(libc::O_DIRECT)
+                .open(path)?;
             let data = vec![byte; count * bsz];
 
             println!("write to block {}:", offset);
@@ -108,7 +113,10 @@ fn main() -> Result<()> {
             offset,
             count,
         } => {
-            let mut file = OpenOptions::new().write(true).open(path)?;
+            let mut file = OpenOptions::new()
+                .write(true)
+                .custom_flags(libc::O_DIRECT)
+                .open(path)?;
 
             let mut rng = rand::thread_rng();
             let mut data = vec![0u8; count * bsz];
