@@ -7,7 +7,6 @@
 extern crate libc;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
-use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -26,6 +25,9 @@ enum Args {
 
         #[structopt(short, long)]
         count: usize,
+
+        #[structopt(short, long, default_value = "512")]
+        bsz: usize,
     },
     Write {
         #[structopt(short, long, parse(from_os_str))]
@@ -38,7 +40,10 @@ enum Args {
         count: usize,
 
         #[structopt(short, long)]
-        byte: u8,
+        value: u8,
+
+        #[structopt(short, long, default_value = "512")]
+        bsz: usize,
     },
     WriteRandom {
         #[structopt(short, long, parse(from_os_str))]
@@ -49,6 +54,9 @@ enum Args {
 
         #[structopt(short, long)]
         count: usize,
+
+        #[structopt(short, long, default_value = "512")]
+        bsz: usize,
     },
 }
 
@@ -73,12 +81,12 @@ fn hexdump(data: &[u8], starting_offset: usize, count: usize, bsz: usize) {
 
 fn main() -> Result<()> {
     let args = Args::from_args_safe()?;
-    let bsz = 512;
     match args {
         Args::Read {
             path,
             offset,
             count,
+            bsz,
         } => {
             let mut file = File::open(path)?;
             let mut data = vec![0u8; count * bsz];
@@ -93,13 +101,13 @@ fn main() -> Result<()> {
             path,
             offset,
             count,
-            byte,
+            value,
+            bsz,
         } => {
             let mut file = OpenOptions::new()
                 .write(true)
-                .custom_flags(libc::O_DIRECT)
                 .open(path)?;
-            let data = vec![byte; count * bsz];
+            let data = vec![value; count * bsz];
 
             println!("write to block {}:", offset);
             hexdump(&data, offset, count, bsz);
@@ -112,10 +120,10 @@ fn main() -> Result<()> {
             path,
             offset,
             count,
+            bsz,
         } => {
             let mut file = OpenOptions::new()
                 .write(true)
-                .custom_flags(libc::O_DIRECT)
                 .open(path)?;
 
             let mut rng = rand::thread_rng();
