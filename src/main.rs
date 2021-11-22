@@ -4,7 +4,6 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 //
 
-extern crate libc;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
@@ -104,9 +103,7 @@ fn main() -> Result<()> {
             value,
             bsz,
         } => {
-            let mut file = OpenOptions::new()
-                .write(true)
-                .open(path)?;
+            let mut file = OpenOptions::new().write(true).open(path)?;
             let data = vec![value; count * bsz];
 
             println!("write to block {}:", offset);
@@ -122,9 +119,7 @@ fn main() -> Result<()> {
             count,
             bsz,
         } => {
-            let mut file = OpenOptions::new()
-                .write(true)
-                .open(path)?;
+            let mut file = OpenOptions::new().write(true).open(path)?;
 
             let mut rng = rand::thread_rng();
             let mut data = vec![0u8; count * bsz];
