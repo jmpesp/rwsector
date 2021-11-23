@@ -84,6 +84,10 @@ fn hexdump(data: &[u8], starting_offset: usize, count: usize, bsz: usize, width:
             }
             println!();
         }
+
+        if (block + 1) != count {
+            println!();
+        }
     }
 }
 
