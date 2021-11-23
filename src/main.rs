@@ -27,6 +27,9 @@ enum Args {
 
         #[structopt(short, long, default_value = "512")]
         bsz: usize,
+
+        #[structopt(short, long, default_value = "16")]
+        width: usize,
     },
     Write {
         #[structopt(short, long, parse(from_os_str))]
@@ -43,6 +46,9 @@ enum Args {
 
         #[structopt(short, long, default_value = "512")]
         bsz: usize,
+
+        #[structopt(short, long, default_value = "16")]
+        width: usize,
     },
     WriteRandom {
         #[structopt(short, long, parse(from_os_str))]
@@ -56,16 +62,19 @@ enum Args {
 
         #[structopt(short, long, default_value = "512")]
         bsz: usize,
+
+        #[structopt(short, long, default_value = "16")]
+        width: usize,
     },
 }
 
-fn hexdump(data: &[u8], starting_offset: usize, count: usize, bsz: usize) {
+fn hexdump(data: &[u8], starting_offset: usize, count: usize, bsz: usize, width: usize) {
     for block in 0..count {
-        for row in 0..32 {
-            let offset = block * bsz + row * 16;
+        for row in 0..(bsz / width) {
+            let offset = block * bsz + row * width;
             print!("{:0>8x}: ", starting_offset * bsz + offset);
 
-            for col in 0..16 {
+            for col in 0..width {
                 let i = offset + col;
                 print!("{:02x}", data[i]);
 
@@ -86,6 +95,7 @@ fn main() -> Result<()> {
             offset,
             count,
             bsz,
+            width,
         } => {
             let mut file = File::open(path)?;
             let mut data = vec![0u8; count * bsz];
@@ -94,7 +104,7 @@ fn main() -> Result<()> {
             file.read_exact(&mut data[..])?;
 
             println!("read from block {}:", offset);
-            hexdump(&data, offset, count, bsz);
+            hexdump(&data, offset, count, bsz, width);
         }
         Args::Write {
             path,
@@ -102,12 +112,13 @@ fn main() -> Result<()> {
             count,
             value,
             bsz,
+            width,
         } => {
             let mut file = OpenOptions::new().write(true).open(path)?;
             let data = vec![value; count * bsz];
 
             println!("write to block {}:", offset);
-            hexdump(&data, offset, count, bsz);
+            hexdump(&data, offset, count, bsz, width);
 
             file.seek(SeekFrom::Start((offset * bsz) as u64))?;
             file.write_all(&data[..])?;
@@ -118,6 +129,7 @@ fn main() -> Result<()> {
             offset,
             count,
             bsz,
+            width,
         } => {
             let mut file = OpenOptions::new().write(true).open(path)?;
 
@@ -126,7 +138,7 @@ fn main() -> Result<()> {
             rng.fill_bytes(&mut data[..]);
 
             println!("write to block {}:", offset);
-            hexdump(&data, offset, count, bsz);
+            hexdump(&data, offset, count, bsz, width);
 
             file.seek(SeekFrom::Start((offset * bsz) as u64))?;
             file.write_all(&data[..])?;
