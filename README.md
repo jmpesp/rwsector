@@ -251,3 +251,8 @@ Specify a different width with `-w`:
     000003c0: ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff 
     000003e0: ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff
 
+Show a digest:
+
+    $ cargo run -q -- digest -p file -o 0 -c 1 -b 512
+    68bce1c0f8c6db4a52e5e251d4cf458be06f572e857902571a3ccaf6d3e2002e
+
