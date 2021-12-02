@@ -10,6 +10,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use rand::RngCore;
+use sha3::{Digest, Sha3_256};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -65,6 +66,19 @@ enum Args {
 
         #[structopt(short, long, default_value = "16")]
         width: usize,
+    },
+    Digest {
+        #[structopt(short, long, parse(from_os_str))]
+        path: PathBuf,
+
+        #[structopt(short, long)]
+        offset: usize,
+
+        #[structopt(short, long)]
+        count: usize,
+
+        #[structopt(short, long, default_value = "512")]
+        bsz: usize,
     },
 }
 
@@ -147,6 +161,24 @@ fn main() -> Result<()> {
             file.seek(SeekFrom::Start((offset * bsz) as u64))?;
             file.write_all(&data[..])?;
             file.flush()?;
+        }
+        Args::Digest {
+            path,
+            offset,
+            count,
+            bsz,
+        } => {
+            let mut file = File::open(path)?;
+            let mut data = vec![0u8; count * bsz];
+
+            file.seek(SeekFrom::Start((offset * bsz) as u64))?;
+            file.read_exact(&mut data[..])?;
+
+            let mut hasher = Sha3_256::new();
+            hasher.update(data);
+            let result = hasher.finalize();
+
+            println!("{:x}", result);
         }
     }
 
